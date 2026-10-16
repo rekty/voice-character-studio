@@ -10,6 +10,8 @@ pinned: false
 
 # 🎙️ Voice Character Studio
 
+[![Made with pollinations.ai](https://raw.githubusercontent.com/pollinations/pollinations/main/packages/ui/src/brand/badge-made-with.svg)](https://pollinations.ai/?ref=badge)
+
 **Speech in, expressive speech out.** Talk to AI characters with your microphone —
 they answer in their own voice, with their own personality.
 
