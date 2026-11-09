@@ -22,10 +22,17 @@ key can be revoked anytime from your dashboard.
 
 ## What it does
 
-1. **Sign in with Pollinations** — the device flow, so it keeps working the moment
-   you duplicate this Space onto any URL. No redirect URI to configure, nothing to
-   re-remember. Your key lives in this browser tab only (`sessionStorage`) and
-   expires automatically (7 days by default).
+1. **Sign in with Pollinations** — on this Space it is the OAuth **code flow with
+   PKCE**: you approve on Pollinations and land straight back here, already signed
+   in. On a duplicate (any other URL) it falls back to the **device flow**, which
+   needs no redirect URI, so a duplicate works the moment it lands. Your key lives
+   in this browser tab only (`sessionStorage`) and expires automatically (7 days).
+
+   The code flow needs no App Key: [`oauth-client.json`](oauth-client.json) is a
+   client metadata document whose `client_id` is its own URL and whose
+   `redirect_uris` is this Space, so the app runs the flow as a public PKCE client.
+   Set `AUTH` in `config.js` to your own Space URL after duplicating, or leave
+   `AUTH.ORIGIN` alone and every duplicate keeps using the device flow.
 2. **Pick a character** — Captain Blackfeather, Professor Hoot, NOVA, or your own
    (see below). Each has a persona, a distinct expressive voice, and a portrait.
 3. **Hold the mic and talk** — your speech is transcribed (Whisper), the character
@@ -46,6 +53,7 @@ Everything editable lives in [`config.js`](config.js) — every value is marked
 | What | Where |
 | --- | --- |
 | Your App Key (`pk_...`) | `APP_CLIENT_ID` — create one at [enter.pollinations.ai/keys](https://enter.pollinations.ai/keys) to show your app name on sign-in and earn 25% developer markup |
+| Sign-in flow | `AUTH` — which origin uses the code flow, its redirect URI, and the client metadata document; other origins use the device flow |
 | Characters | `CHARACTERS` — persona prompt, voice, portrait, accent color |
 | Models | `MODELS` — any non-paid-only model from the [text](https://gen.pollinations.ai/text/models), [audio](https://gen.pollinations.ai/audio/models) or [image](https://gen.pollinations.ai/image/models) lists |
 | Budget / limits | `BEHAVIOR` — max record time, remembered turns, suggested sign-in budget |

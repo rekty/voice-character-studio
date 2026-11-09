@@ -1,0 +1,6 @@
+{
+  "client_id": "https://rekty1988-voice-character-studio.static.hf.space/oauth-client.json",
+  "client_name": "Voice Character Studio",
+  "redirect_uris": ["https://rekty1988-voice-character-studio.static.hf.space/"],
+  "token_endpoint_auth_method": "none"
+}

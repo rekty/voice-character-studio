@@ -292,10 +292,110 @@
     }
     const authHeader = () => ({ "Authorization": "Bearer " + apiKey });
 
-    // ── sign-in (BYOP device flow) ───────────────────────────────────────
-    // The device flow needs no redirect URI, so a duplicated Space works
-    // the moment it lands on any URL — nothing to reconfigure.
+    // ── sign-in ──────────────────────────────────────────────────────────
+    // On the original Space: OAuth code flow with PKCE, so the visitor comes
+    // straight back into the app after approving. Anywhere else (a duplicate
+    // on another URL): the device flow, which needs no redirect URI.
+    const AUTH = CFG.AUTH || {};
+    const PKCE_STORE = "vcs_pkce";          // sessionStorage — verifier for the round trip
+    const onAuthOrigin = () => !AUTH.ORIGIN || location.origin === AUTH.ORIGIN;
+    const codeFlowClient = () => AUTH.CLIENT_METADATA_URL || CFG.APP_CLIENT_ID || "";
+
+    function b64url(bytes) {
+        const arr = new Uint8Array(bytes);
+        let s = "";
+        for (let i = 0; i < arr.length; i++) s += String.fromCharCode(arr[i]);
+        return btoa(s).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+    }
+    async function pkcePair() {
+        const verifier = b64url(crypto.getRandomValues(new Uint8Array(32)));
+        const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(verifier));
+        return { verifier, challenge: b64url(digest) };
+    }
+
     async function signIn() {
+        if (onAuthOrigin() && codeFlowClient()) return startCodeFlow();
+        return startDeviceFlow();
+    }
+
+    async function startCodeFlow() {
+        try {
+            const { verifier, challenge } = await pkcePair();
+            const state = b64url(crypto.getRandomValues(new Uint8Array(16)));
+            const redirectUri = AUTH.REDIRECT_URI || location.origin + location.pathname;
+            sessionStorage.setItem(PKCE_STORE, JSON.stringify({ verifier, state, redirectUri }));
+            const params = new URLSearchParams({
+                response_type: "code",
+                client_id: codeFlowClient(),
+                redirect_uri: redirectUri,
+                state,
+                code_challenge: challenge,
+                code_challenge_method: "S256",
+                budget: String(CFG.BEHAVIOR.budgetRequest || 5),
+                expiry: "7",
+                models: "text,audio,image",
+            });
+            location.assign(ENTER + "/authorize?" + params.toString());
+        } catch (e) {
+            sessionStorage.removeItem(PKCE_STORE);
+            status("Could not start sign-in: " + e.message, true);
+        }
+    }
+
+    // Runs on every load: if we came back from /authorize with a code, redeem it.
+    // Returns true when the URL was a sign-in callback.
+    async function completeCodeFlow() {
+        const url = new URL(location.href);
+        const code = url.searchParams.get("code");
+        const state = url.searchParams.get("state");
+        const authErr = url.searchParams.get("error");
+        if (!code && !authErr) return false;
+
+        // Drop the single-use code from the address bar and history right away.
+        ["code", "state", "error", "error_description"].forEach(p => url.searchParams.delete(p));
+        const qs = url.searchParams.toString();
+        // window.history: the local `history` array holds the chat turns.
+        window.history.replaceState({}, "", url.pathname + (qs ? "?" + qs : "") + url.hash);
+
+        const saved = JSON.parse(sessionStorage.getItem(PKCE_STORE) || "null");
+        sessionStorage.removeItem(PKCE_STORE);
+
+        if (authErr) {
+            status("Sign-in was cancelled: " + authErr, true);
+            return true;
+        }
+        if (!saved || !state || saved.state !== state) {
+            status("Sign-in could not be verified — please try again.", true);
+            return true;
+        }
+        try {
+            const res = await fetch(ENTER + "/api/oauth/token", {
+                method: "POST",
+                headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                body: new URLSearchParams({
+                    grant_type: "authorization_code",
+                    code,
+                    client_id: codeFlowClient(),
+                    redirect_uri: saved.redirectUri,
+                    code_verifier: saved.verifier,
+                }),
+            });
+            const j = await res.json().catch(() => ({}));
+            if (!res.ok || !j.access_token) {
+                throw new Error(j.error_description || j.error || "HTTP " + res.status);
+            }
+            apiKey = j.access_token;
+            sessionStorage.setItem(KEY_STORE, apiKey);
+            onSignedIn();
+        } catch (e) {
+            status("Sign-in failed: " + e.message, true);
+        }
+        return true;
+    }
+
+    // Fallback: device flow. Needs no redirect URI, so a duplicated Space works
+    // the moment it lands on any URL — nothing to reconfigure.
+    async function startDeviceFlow() {
         try {
             const res = await fetch(ENTER + "/api/device/code", {
                 method: "POST",
@@ -573,6 +673,7 @@
     // ── boot ─────────────────────────────────────────────────────────────
     selectCharacter(character.id);
     if (apiKey) onSignedIn();
+    completeCodeFlow();
 })();
 </script>
 </body>

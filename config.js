@@ -15,6 +15,25 @@ window.VCS_CONFIG = {
     // to the redirect hostname.
     APP_CLIENT_ID: "pk_OgKOvwYe1inoV0DL",
 
+    // ── EDIT ME: sign-in on this Space ───────────────────────────────────
+    // On ORIGIN the app uses the OAuth code flow with PKCE and sends visitors
+    // straight back to REDIRECT_URI after they approve — no device-code page,
+    // no "return to your device". Anywhere else (a duplicate on another URL)
+    // sign-in falls back to the device flow, which needs no redirect URI, so
+    // duplicates still work with nothing to configure.
+    //
+    // CLIENT_METADATA_URL is a client metadata document hosted by this Space:
+    // its `client_id` is its own URL and its `redirect_uris` is REDIRECT_URI,
+    // so the code flow works without registering anything on an App Key.
+    // Set it to "" to use APP_CLIENT_ID (then REDIRECT_URI must be registered
+    // on that key at https://enter.pollinations.ai/keys).
+    AUTH: {
+        ORIGIN: "https://rekty1988-voice-character-studio.static.hf.space",
+        REDIRECT_URI: "https://rekty1988-voice-character-studio.static.hf.space/",
+        CLIENT_METADATA_URL:
+            "https://rekty1988-voice-character-studio.static.hf.space/oauth-client.json",
+    },
+
     // ── EDIT ME: characters ──────────────────────────────────────────────
     // Add, remove or rewrite characters. Each one needs:
     //   id          — used in URLs and file names (letters, digits, -)
