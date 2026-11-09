@@ -33,6 +33,9 @@ key can be revoked anytime from your dashboard.
    `redirect_uris` is this Space, so the app runs the flow as a public PKCE client.
    Set `AUTH` in `config.js` to your own Space URL after duplicating, or leave
    `AUTH.ORIGIN` alone and every duplicate keeps using the device flow.
+
+   To verify the flow by hand with a real account (what to prepare, expected
+   results, failure cases), follow [`TESTING-SIGNIN.md`](TESTING-SIGNIN.md).
 2. **Pick a character** — Captain Blackfeather, Professor Hoot, NOVA, or your own
    (see below). Each has a persona, a distinct expressive voice, and a portrait.
 3. **Hold the mic and talk** — your speech is transcribed (Whisper), the character
