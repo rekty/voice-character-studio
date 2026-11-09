@@ -30,6 +30,14 @@ Client id (a metadata document, no App Key needed):
    and you lose the `authorize` and `token` calls you need when something fails.
 5. **A note of your starting balance**: https://gen.pollinations.ai/account/balance
    (or the balance shown at enter.pollinations.ai). You compare it after the test.
+6. **Microphone permission for the Space origin** if you want to test the voice
+   turn: click the lock/mic icon in the address bar → set Microphone to **Allow**
+   → reload. Only the hold-to-talk button needs it; typing works without it, so
+   do not mistake a mic prompt for a sign-in problem. Symptom when it is still
+   blocked: the status line reads "Microphone is blocked for this site — click
+   the lock/mic icon in the address bar, set Microphone to Allow, reload. Or
+   type below." while you are already signed in (older builds said simply
+   "Microphone blocked — allow it in your browser, or type below.").
 
 ## No-account sanity checks (run first, 30 seconds)
 

@@ -581,14 +581,35 @@
         addCost((j.usage?.seconds || 0) * PRICE.sttPerSecond);
         return (j.text || "").trim();
     }
+    // A blocked mic, a missing device and a mic held by another app all reject
+    // getUserMedia, but the fix is different for each. Name the real cause.
+    function micErrorText(e) {
+        const name = (e && e.name) || "";
+        if (!window.isSecureContext) {
+            return "Microphone needs HTTPS — open this page over https:// or type below.";
+        }
+        if (name === "NotAllowedError" || name === "SecurityError") {
+            return "Microphone is blocked for this site — click the lock/mic icon in the address bar, set Microphone to Allow, reload. Or type below.";
+        }
+        if (name === "NotFoundError" || name === "OverconstrainedError") {
+            return "No microphone found — connect one, reload, or type below.";
+        }
+        if (name === "NotReadableError" || name === "AbortError") {
+            return "Your microphone is busy in another app — close it and try again, or type below.";
+        }
+        return "Could not start the microphone (" + (name || "unknown") + ") — type below instead.";
+    }
     async function startRecording() {
         if (busy) return status("One turn at a time — wait for the reply.");
         if (!apiKey) return signIn();
         let stream;
         try {
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                throw Object.assign(new Error("mediaDevices unavailable"), { name: "UnsupportedError" });
+            }
             stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        } catch (_) {
-            return status("Microphone blocked — allow it in your browser, or type below.", true);
+        } catch (e) {
+            return status(micErrorText(e), true);
         }
         recChunks = [];
         const mime = MediaRecorder.isTypeSupported("audio/webm;codecs=opus") ? "audio/webm;codecs=opus" : "";
